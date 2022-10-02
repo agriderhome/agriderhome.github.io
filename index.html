@@ -1,17 +1,202 @@
 <!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
-    <title>Hello again</title>
-</head>
-<body>
-    <div>Hellow Whirled. How are you??? Another change, another change.</div>
-    <div>
-        <script>
-            alert('hello');
-        </script>
+    <title>Canvas Stuff</title>
+    <style type="text/css">
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
 
-    </div>
+        canvas {
+            background: #000;
+            height: 100%;
+            width: 100%;
+            display: block
+        }
+
+        .hot {
+            color: red;
+            font-size: 5em;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" />
+    <div id="output"></div>
 </body>
+<script>
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+    var width = 800;
+    var height = 200;
+
+    var keyMap = {
+        68: 'right',
+        65: 'left',
+        87: 'up',
+        83: 'down',
+        39: 'right',
+        37: 'left',
+        38: 'up',
+        40: 'down'
+    }
+
+    var resize = function () {
+        width = window.innerWidth * 2
+        height = window.innerHeight * 2
+        canvas.width = width
+        canvas.height = height
+    }
+
+    function keydown(event) {
+        var key = keyMap[event.keyCode];
+        state.pressedKeys[key] = true;
+    }
+    function keyup(event) {
+        var key = keyMap[event.keyCode];
+        state.pressedKeys[key] = false;
+    }
+
+    window.addEventListener("keydown", keydown, false);
+    window.addEventListener("keyup", keyup, false);
+
+    window.onresize = resize;
+    resize();
+
+    ctx.fillStyle = 'red';
+
+    var state = {
+        position: {
+            x: (width / 2),
+            y: (height / 2)
+        },
+        movement: {
+            x: 0,
+            y: 0
+        },
+        rotation: 0,
+        drag: 50,
+        mass: 10,
+        pressedKeys: {
+            left: false,
+            right: false,
+            up: false,
+            down: false
+        }
+    }
+
+
+    function update(progress) {
+        // Update the state of the world for the elapsed time since last render
+        // Make a smaller time value that's easier to work with
+        var p = progress / 32;
+
+        updateRotation(p)
+        updateMovement(p)
+        updatePosition(p)
+    }
+
+    function updateRotation(p) {
+        if (state.pressedKeys.left) {
+            state.rotation -= p * 5
+        }
+        else if (state.pressedKeys.right) {
+            state.rotation += p * 5
+        }
+    }
+
+    function updateMovement(p) {
+        // Behold! Mathematics for mapping a rotation to it's x, y components
+        var accelerationVector = {
+            x: p * .3 * Math.cos((state.rotation - 90) * (Math.PI / 180)),
+            y: p * .3 * Math.sin((state.rotation - 90) * (Math.PI / 180))
+        }
+
+        if (state.pressedKeys.up) {
+            state.movement.x += accelerationVector.x
+            state.movement.y += accelerationVector.y
+        }
+        else if (state.pressedKeys.down) {
+            state.movement.x -= accelerationVector.x
+            state.movement.y -= accelerationVector.y
+        }
+        state.movement.y = state.movement.y + (state.mass * (p/100));
+        // Limit movement speed
+        if (state.movement.x > 40) {
+            state.movement.x = 40
+        }
+        else if (state.movement.x < -40) {
+            state.movement.x = -40
+        }
+        if (state.movement.y > 40) {
+            state.movement.y = 40
+        }
+        else if (state.movement.y < -40) {
+            state.movement.y = -40
+        }
+
+        // add drag:
+        state.movement.x = state.movement.x * (1-(p/state.drag));
+        state.movement.y = state.movement.y * (1-(p/state.drag));
+    }
+
+    function updatePosition(p) {
+        state.position.x += state.movement.x
+        state.position.y += state.movement.y
+
+        // Detect boundaries
+        if (state.position.x > width) {
+            state.position.x -= width
+        }
+        else if (state.position.x < 0) {
+            state.position.x += width
+        }
+        if (state.position.y > height) {
+            state.position.y -= height
+        }
+        else if (state.position.y < 0) {
+            state.position.y += height
+        }
+    }
+
+    function draw() {
+        // Draw the state of the world
+        ctx.clearRect(0, 0, width, height)
+
+        ctx.save()
+        ctx.translate(state.position.x, state.position.y)
+        ctx.rotate((Math.PI / 180) * state.rotation)
+        //ctx.scale((state.movement.x + state.movement.y)/4,(state.movement.x + state.movement.y)/4)
+        ctx.strokeStyle = 'white'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(0, 0)
+        ctx.lineTo(10, 10)
+        ctx.lineTo(0, -20)
+        ctx.lineTo(-10, 10)
+        ctx.lineTo(0, 0)
+        ctx.closePath()
+        ctx.stroke()
+        ctx.restore()
+    }
+
+    function loop(timestamp) {
+        var progress = timestamp - lastRender;
+
+        update(progress);
+        draw();
+
+        lastRender = timestamp;
+        window.requestAnimationFrame(loop);
+    }
+    var lastRender = 0;
+    window.requestAnimationFrame(loop);
+</script>
+
 </html>
