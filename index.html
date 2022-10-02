@@ -82,7 +82,8 @@
         },
         rotation: 0,
         drag: 50,
-        mass: 10,
+        mass: 0,
+        thrust: 0,
         pressedKeys: {
             left: false,
             right: false,
@@ -119,14 +120,19 @@
         }
 
         if (state.pressedKeys.up) {
-            state.movement.x += accelerationVector.x
-            state.movement.y += accelerationVector.y
+            state.movement.x += accelerationVector.x;
+            state.movement.y += accelerationVector.y;
+            state.thrust += 20;
         }
         else if (state.pressedKeys.down) {
             state.movement.x -= accelerationVector.x
             state.movement.y -= accelerationVector.y
         }
-        state.movement.y = state.movement.y + (state.mass * (p/100));
+
+        state.thrust = state.thrust * .75;
+        if (state.thrust > 50) state.thrust = 50;
+        if (state.thrust < 4) state.thrust = 0;
+        state.movement.y = state.movement.y + (state.mass * (p / 100));
         // Limit movement speed
         if (state.movement.x > 40) {
             state.movement.x = 40
@@ -142,8 +148,8 @@
         }
 
         // add drag:
-        state.movement.x = state.movement.x * (1-(p/state.drag));
-        state.movement.y = state.movement.y * (1-(p/state.drag));
+        state.movement.x = state.movement.x * (1 - (p / state.drag));
+        state.movement.y = state.movement.y * (1 - (p / state.drag));
     }
 
     function updatePosition(p) {
@@ -170,19 +176,55 @@
         ctx.clearRect(0, 0, width, height)
 
         ctx.save()
+
         ctx.translate(state.position.x, state.position.y)
         ctx.rotate((Math.PI / 180) * state.rotation)
         //ctx.scale((state.movement.x + state.movement.y)/4,(state.movement.x + state.movement.y)/4)
         ctx.strokeStyle = 'white'
+
         ctx.lineWidth = 2
-        ctx.beginPath()
+        ctx.beginPath();
         ctx.moveTo(0, 0)
         ctx.lineTo(10, 10)
         ctx.lineTo(0, -20)
         ctx.lineTo(-10, 10)
         ctx.lineTo(0, 0)
-        ctx.closePath()
-        ctx.stroke()
+        ctx.closePath();
+        ctx.stroke();
+
+        if (state.thrust > 0) {
+            ctx.fillStyle = '#FF6600';
+            ctx.shadowColor = '#FF6600';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 5;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(3, state.thrust);
+            ctx.lineTo(0, state.thrust * 1.3);
+            ctx.lineTo(-3, state.thrust);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.shadowColor = 'transparent';
+
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#FFFF00'
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, state.thrust);
+            ctx.stroke();
+
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#ffffff'
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, state.thrust * 0.9);
+            ctx.stroke();
+        }
         ctx.restore()
     }
 
